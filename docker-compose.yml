@@ -1,0 +1,12 @@
+services:
+  client_manager:
+    container_name: raspi_client_container
+    image: raspi_client_image
+    build: ./app
+    volumes:
+      - ./app/code:/app
+    expose:
+      - 5080
+    ports:
+      - "5080:5080"
+    #network_mode: "host" #for a docker in a vpn

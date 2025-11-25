@@ -1,0 +1,8 @@
+Flask
+requests
+numpy
+opencv-python-headless #opencv-python
+
+flask-socketio==5.3.6 
+python-socketio==5.11.4
+websocket-client
