@@ -1,0 +1,27 @@
+services:
+  client_manager:
+    container_name: raspi_client_container
+    image: raspi_client_image
+    build: ./app
+    volumes:
+      - ./app/code:/app
+    expose:
+      - "5080"
+    networks:
+      - client_net
+
+  nginx_client:
+    container_name: nginx_client_container
+    image: nginx:alpine
+    volumes:
+      - ./nginx/client_nginx.conf:/etc/nginx/nginx.conf:ro    
+    ports:
+      - "5080:80"
+    depends_on:
+      - client_manager
+    networks:
+      - client_net
+
+networks:
+  client_net:
+    driver: bridge

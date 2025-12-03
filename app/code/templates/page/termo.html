@@ -1,0 +1,23 @@
+{% extends "default.html" %}
+
+{% block content %}
+<div style="background:#000; text-align:center;">
+    <h2 style="color:white;">Termocamera MLX90640</h2>
+    <img src="{{ url_for('views.video_feed') }}" style="width:640px;"><br>
+    <h3 id="tmax" style="color:yellow; font-size:24px;">Temp Max: -- °C</h3>
+</div>
+
+<script>
+function updateTemp() {
+    fetch('{{ url_for("views.tmax") }}')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById("tmax").innerText = "Temp Max: " + data.t_max + " °C";
+        })
+        .catch(err => console.error(err));
+}
+
+setInterval(updateTemp, 1000);
+updateTemp();
+</script>
+{% endblock %}

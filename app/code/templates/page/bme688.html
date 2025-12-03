@@ -1,0 +1,23 @@
+{% extends "default.html" %}
+
+{% block content %}
+<div style="background:#000; text-align:center;">
+    <h2 style="color:white;">BME688</h2>
+    <h3 id="bme688" style="color:yellow; font-size:24px;">Temp Max: -- °C</h3>
+</div>
+
+<script>
+function updateTemp() {
+    fetch('{{ url_for("views.bme688") }}')
+        .then(response => response.json())
+        .then(data => {
+            console.log(data);
+            document.getElementById("bme688").innerText = "Temp Max: " + data.altitude[1];
+        })
+        .catch(err => console.error(err));
+}
+
+setInterval(updateTemp, 1000);
+updateTemp();
+</script>
+{% endblock %}

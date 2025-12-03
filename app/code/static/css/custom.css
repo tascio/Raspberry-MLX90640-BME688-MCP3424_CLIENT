@@ -1,0 +1,16 @@
+.flash-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none; 
+    z-index: 9999;       
+    animation: flash-red 1s infinite !important;
+    background-color: rgba(255, 0, 0, 0.6);
+}
+
+@keyframes flash-red {
+    0%, 100% { opacity: 0; }
+    50%      { opacity: 1; }
+}

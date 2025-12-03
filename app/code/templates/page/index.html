@@ -1,0 +1,934 @@
+{% extends "default.html" %}
+
+{% block content %}
+<div class="content bg-dark">
+    <div class="container-fluid">
+        <div class="row pt-2 gy-2">
+            <div class="col-12 col-md-2">
+                <div class="input-group mb-1">
+                    <span class="btn bg-primary text-white input-group-text" id="setServer" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Click to set Server API IP" onclick="setServer();">SET SERVER</span>
+                    <input type="text" class="form-control" placeholder="{{serverIp}}" id="ipServer" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Type the Server API IP" aria-label="ipServer" aria-describedby="ipServer">
+                </div>
+            </div>
+        
+            <div class="col-12 col-md-2 border-md-start border-primary">
+                <div class="d-flex flex-column flex-md-row align-items-center gap-1">
+                    <div class="d-flex gap-1 mb-1 mb-md-0">
+                        <button id="changeWetA" type="button" class="btn bg-success text-white" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Click to set Wet A" onclick="changeWet('10.100.0.1');">WET A</button>
+                        <button id="changeWetB" type="button" class="btn bg-success text-white" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Click to set Wet B" onclick="changeWet('10.100.0.2');">WET B</button>
+                    </div>
+                    <div class="d-flex flex-column text-center text-md-start">
+                        <span class="badge bg-primary" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Wet IP in use">{{wet_ip}}</span>
+                        <span class="badge bg-primary" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Mac Address">{{mac_wet}}</span>
+                    </div>
+                </div>
+            </div>
+        
+            <div class="col-12 col-md-3 border-md-start border-primary">
+                <div class="d-flex flex-column flex-md-row align-items-center gap-1 mb-1">
+                    <button id="startBtn" type="button" class="btn bg-success text-white flex-fill" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Click to start acquisition and generation of file" onclick="startAcquisition();">
+                        Start Acquisition
+                    </button>
+                    <button id="stopBtn" type="button" class="btn bg-danger text-white flex-fill" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Click to stop the acquisition and close the file" onclick="stopAcquisition();">
+                        Stop Acquisition
+                    </button>
+                    <div id="refreshBox" class="text-white text-center text-md-start flex-fill"></div>
+                </div>
+                <div id="statusBox" class="text-white text-center text-md-start"></div>
+            </div>
+        
+            <div class="col-12 col-md-3 border-md-start border-primary">
+                <div class="d-flex flex-column flex-md-row gap-1 mb-1">
+                    <button id="setThreshold" type="button" class="btn bg-primary text-white flex-fill" onclick="startThreshold();">START Threshold</button>
+                    <button id="stopThreshold" type="button" class="btn bg-danger text-white flex-fill" onclick="stopThreshold();">STOP Threshold</button>
+                </div>
+                <div id="statusBoxTh" class="text-white text-center text-md-start"></div>
+            </div>
+        
+            <div class="col-12 col-md-2 text-center text-md-start">
+                <h3 id="trigger" class="text-danger fw-bold"></h3>
+            </div>
+        </div>
+        <div class="row bg-primary my-2" style="height:5px;"></div>
+        <div class="row">
+            <div class="col">
+                <div class="row text-center align-items-center my-4">
+                    <div class="col-12  mx-auto">
+                        <div class="d-flex justify-content-between align-items-center mb-2 px-4">
+                            <h3 id="tmax" class="text-warning mb-0">Temp Max: -- °C</h3>
+                            <h4 id="tmax_timestamp" class="text-white mb-0"></h4>
+                        </div>
+                
+                        <div id="thermalCanvasContainer" class="bg-black rounded shadow-lg overflow-hidden border border-primary" style="max-width: 100%; aspect-ratio: 4 / 3;">
+                            <canvas id="thermalCanvasReal"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row bg-primary my-2" style="height:5px;"></div>
+
+                <div class="row">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th class="text-center text-white">
+                                    <h2>{{power_supply}}</h2>
+                                </th>
+                                <th class="text-center text-white">
+                                    <h3 id="power_supply-timestamp" class="text-white"></h3>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="">
+                            <tr class="text-center text-warning">
+                                <th class="w-50">
+                                    <h3>VOLT</h3>
+                                </th>
+                                <th class="w-50">
+                                    <h3>CURR</h3>
+                                </th>
+                            </tr>
+                            <tr class="text-center text-warning">
+                                <td class="w-50">
+                                    <h3 id="power_supply-volt"></h3>
+                                </td>
+                                <td class="w-50">
+                                    <h3 id="power_supply-curr"></h3>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="col-auto bg-primary" style="width:5px;">
+            </div>
+            <div class="col">
+                <div class="row">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th colspan="1" class="text-center text-white">
+                                    <h2>BME688</h2>
+                                </th>
+                                <th colspan="1" class="text-center text-white">
+                                    <h3 id="bme_timestamp"></h3>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="">
+                            <tr class="text-center text-warning">
+                                <td class="w-50">
+                                    <h3>Altitude</h3>
+                                </td>
+                                <td class="w-50">
+                                    <h3 id="bme688Alt"></h3>
+                                </td>
+                            </tr>
+                            <tr class="text-center text-warning">
+                                <td class="w-50">
+                                    <h3>Gas</h3>
+                                </td>
+                                <td class="w-50">
+                                    <h3 id="bme688Gas"></h3>
+                                </td>
+                            </tr>
+                            <tr class="text-center text-warning">
+                                <td class="w-50">
+                                    <h3>Humidity</h3>
+                                </td>
+                                <td class="w-50">
+                                    <h3 id="bme688Hum"></h3>
+                                </td>
+                            </tr>
+                            <tr class="text-center text-warning">
+                                <td class="w-50">
+                                    <h3>Pressure</h3>
+                                </td>
+                                <td class="w-50">
+                                    <h3 id="bme688Pre"></h3>
+                                </td>
+                            </tr>
+                            <tr class="text-center text-warning">
+                                <td class="w-50">
+                                    <h3>Temperature</h3>
+                                </td>
+                                <td class="w-50">
+                                    <h3 id="bme688Tem"></h3>
+                                </td>
+                            </tr>
+                            <tr class="text-center text-warning">
+                                <td class="w-50">
+                                    <h3>Dew Point</h3>
+                                </td>
+                                <td class="w-50">
+                                    <h3 id="dewpoint" class="text-warning"></h3>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="row bg-primary my-2" style="height:5px;"></div>
+
+                <div class="row">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th colspan="2" class="text-center text-white">
+                                    <h2>MCP3424</h2>
+                                </th>
+                                <th colspan="2" class="text-center text-white">
+                                    <h3 class="text-white" id="mcp_timestamp"></h3>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="">
+                            <tr class="text-center text-white">
+                                <th>CHANNEL</th>
+                                <th>RAW</th>
+                                <th>MEASURE</th>
+                                <th>CONVERTED</th>
+                            </tr>
+                            <tr class="text-center text-warning">
+                                <td class="w-25">
+                                    <h3 id="mcp3424cha"></h3>
+                                </td>
+                                <td class="w-25">
+                                    <h3 id="mcp3424raw"></h3>
+                                </td>
+                                <td class="w-25">
+                                    <h3 id="mcp3424val"></h3>
+                                </td>
+                                <td class="w-25">
+                                    <h3 id="mcp3424con"></h3>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="row bg-primary my-2" style="height:5px;"></div>
+
+                <div class="row">
+                    <div class="col-12">
+                        <div class="row">
+                            <div class="col-6 text-center">
+                                <h2 class="text-white">WET - <span class="text-warning" id="wet_fpga"></span></h2>
+                            </div>
+                            <div class="col-6 text-center">
+                                <h3 class="text-white" id="wet_timestamp"></h3>
+                            </div>
+                        </div>
+                        <table class="table table-hover">
+                            <tbody class="">
+                                <tr class="text-center text-white">
+                                    {% for th in wet_array[1:10] %}
+                                        <td>{{th}}</td>
+                                    {% endfor %}
+                                </tr>
+                                <tr class="text-center text-warning">
+                                    {% for i in range(1, 10) %}
+                                        <td id="wet_p{{i}}"></td>
+                                    {% endfor %}
+                                </tr>
+                                <tr class="text-center text-white">
+                                    {% for th in wet_array[10:19] %}
+                                        <td>{{th}}</td>
+                                    {% endfor %}
+                                </tr>
+                                <tr class="text-center text-warning">
+                                    {% for i in range(10, 19) %}
+                                        <td id="wet_p{{i}}"></td>
+                                    {% endfor %}
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row bg-primary my-2" style="height:5px;"></div>
+        <div class="row align-items-center mb-3">
+            <div class="col position-relative text-center text-warning fw-bold">
+                <h2 class="">CSV FILE</h2>
+                <button id="openCsvBtn" type="button" class="btn bg-primary text-white " data-bs-toggle="modal" data-bs-target="#csvModal" onclick="loadCsvList()">
+                    Load CSV <i class="bi bi-file-earmark-arrow-up"></i>
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="copytoclip()">
+                    CopyToClip <i class="bi bi-clipboard"></i>
+                </button>
+            </div>
+        </div>
+        <div class="row">
+            <table class="table">
+                <tbody class="text-white text-center" id="csv">
+                    <tr class="text-center text-white">
+                        <th>N.</th>
+                        <th>DV</th>
+                        <th>AIR TEMP</th>
+                        <th>HUMIDITY</th>
+                        <th>CURR GBP</th>
+                        <th>FPGA</th>
+                        <th>wri1</th>
+                        <th>wri2</th>
+                        <th>wri3</th>
+                        <th>wri4</th>
+                        <th>wri5</th>
+                        <th>wri6</th>
+                        <th>wri7</th>
+                        <th>wri8</th>
+                        <th>wri9</th>
+                        <th>wri10</th>
+                        <th>wri11</th>
+                        <th>wri12</th>
+                        <th>wri13</th>
+                        <th>wri14</th>
+                        <th>wri15</th>
+                        <th>wri16</th>
+                        <th>wri17</th>
+                        <th>wri18</th>
+                    </tr>
+                </tbody>
+            </table>
+            <!-- Modal -->
+            <div class="modal fade" id="csvModal" tabindex="-1" aria-labelledby="csvModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content bg-dark text-white">
+                    <div class="modal-header">
+                    <h5 class="modal-title text-warning" id="csvModalLabel">Select CSV File</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" id="csvModalBody">
+                    <div class="text-center text-secondary">Loading CSV list...</div>
+                    </div>
+                </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+<script>
+    
+let activeSources = new Set(); //flash trigger, who is manager
+
+
+
+function updateBme() {
+    fetch('{{ url_for("views.bme688") }}')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById("bme688Alt").innerText = data.altitude;
+            document.getElementById("bme688Gas").innerText = data.gas;
+            document.getElementById("bme688Hum").innerText = data.humidity;
+            document.getElementById("bme688Pre").innerText = data.pressure;
+            document.getElementById("bme688Tem").innerText = data.temp;
+            document.getElementById("dewpoint").innerText = data.dew_point;
+            document.getElementById("bme_timestamp").innerText = data.timestamp;
+        })
+        .catch(err => console.error(err));
+}
+function updateMcp() {
+    fetch('{{ url_for("views.mcp3424") }}')
+        .then(response => response.json())
+        .then(data => {
+            if (data.threshold) {
+                startFlashing(data.threshold, 'mcp');
+            } else {
+                stopFlashing('mcp');
+            }
+            document.getElementById("mcp3424cha").innerText = 'Channel ' + data.channel;
+            document.getElementById("mcp3424raw").innerText = data.raw;
+            document.getElementById("mcp_timestamp").innerText = data.timestamp;
+            if (data.raw < 50) {
+                document.getElementById("mcp3424con").innerText = 'NC';
+                document.getElementById("mcp3424val").innerText = 'NC';
+            }
+            else {
+                document.getElementById("mcp3424con").innerText = data.converted;
+                document.getElementById("mcp3424val").innerText = data.val;
+            }
+            
+        })
+        .catch(err => console.error(err));
+}
+function updateWet() {
+    fetch('{{ url_for("views.wet") }}')
+        .then(response => response.json())
+        .then(data => {
+            if (data.threshold) {
+                startFlashing(data.threshold, 'wet');
+            } else {
+                stopFlashing('wet');
+            }
+            document.getElementById("wet_fpga").innerText = 'FPGA ' + data.fpga;
+            document.getElementById("wet_p1").innerText = data.wri1;
+            document.getElementById("wet_p2").innerText = data.wri2;
+            document.getElementById("wet_p3").innerText = data.wri3;
+            document.getElementById("wet_p4").innerText = data.wri4;
+            document.getElementById("wet_p5").innerText = data.wri5;
+            document.getElementById("wet_p6").innerText = data.wri6;
+            document.getElementById("wet_p7").innerText = data.wri7;
+            document.getElementById("wet_p8").innerText = data.wri8;
+            document.getElementById("wet_p9").innerText = data.wri9;
+            document.getElementById("wet_p10").innerText = data.wri10;
+            document.getElementById("wet_p11").innerText = data.wri11;
+            document.getElementById("wet_p12").innerText = data.wri12;
+            document.getElementById("wet_p13").innerText = data.wri13;
+            document.getElementById("wet_p14").innerText = data.wri14;
+            document.getElementById("wet_p15").innerText = data.wri15;
+            document.getElementById("wet_p16").innerText = data.wri16;
+            document.getElementById("wet_p17").innerText = data.wri17;
+            document.getElementById("wet_p18").innerText = data.wri18;
+            document.getElementById("wet_timestamp").innerText = data.timestamp;
+        })
+        .catch(err => console.error(err));
+}
+function updateKey() {
+    fetch('{{ url_for("views.power_supply") }}')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById("power_supply-timestamp").innerText = data.timestamp;
+            document.getElementById("power_supply-curr").innerText = data.curr;
+            document.getElementById("power_supply-volt").innerText = data.volt;
+        })
+        .catch(err => console.error(err));
+}
+async function startAcquisition() {
+    const response = await fetch('/start_acquisition');
+    const data = await response.json();
+    document.getElementById('statusBox').innerText = data.response;
+}
+
+async function stopAcquisition() {
+    const response = await fetch('/stop_acquisition');
+    const data = await response.json();
+    document.getElementById('statusBox').innerText = data.response;
+    document.getElementById('refreshBox').innerText = '';
+}
+
+async function startThreshold() {
+    const response = await fetch('/start_threshold', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+    });
+    const data = await response.json();
+    document.getElementById('statusBoxTh').innerText = data.response;
+    
+}
+
+async function stopThreshold() {
+    const response = await fetch('/stop_threshold');
+    const data = await response.json();
+    document.getElementById('statusBoxTh').innerText = data.response;
+}
+
+function updateCountdown() {
+    fetch('/acquisition_status')
+        .then(res => res.json())
+        .then(data => {
+            if (data.running) {
+                document.getElementById('refreshBox').innerText =
+                    `Next refresh in: ${data.remaining_time}s`;
+
+                const lastIndex = getLastIndex();
+                fetch('/read_csv')
+                    .then(res => res.json())
+                    .then(data => {
+                        data.forEach((row, index) =>  {
+                            if (index > lastIndex) {
+                                let res = '';
+                                const vals = row.split(',');
+                                console.log(vals);
+                                for (const el in vals) {
+                                    res += `<td> ${vals[el]} </td>`;
+                                }
+                                document.getElementById('csv').innerHTML += `
+                                <tr class="text-warning">
+                                    <td>
+                                        ${index}
+                                    </td>
+                                    
+                                    ${res}
+
+                                </tr>`;
+                                console.log('index '+index+' riga '+row);
+                            }
+                        });
+                    });
+            } 
+        });
+}
+function getLastIndex() {
+    const rows = document.querySelectorAll('#csv tr');
+    if (rows.length === 0) return -1; //se la tabella è vuota
+    const lastRow = rows[rows.length - 1];
+    const lastIndex = parseInt(lastRow.cells[0].textContent);
+    return isNaN(lastIndex) ? -1 : lastIndex;
+}
+
+async function loadCsvList() {
+    const modalBody = document.getElementById("csvModalBody");
+    modalBody.innerHTML = '<div class="text-center text-secondary">Loading...</div>';
+
+    try {
+        const res = await fetch('/csv_list');
+        const files = await res.json();
+
+        if (files.length === 0) {
+            modalBody.innerHTML = '<div class="text-center text-danger">No CSV files found in /app/acquisitions</div>';
+            return;
+        }
+
+        modalBody.innerHTML = `
+            <ul class="list-group">
+                ${files.map(f => `
+                    <li class="list-group-item list-group-item-action bg-dark text-warning border-secondary" style="cursor:pointer" onclick="openCsvFile('${f}')">
+                        ${f}
+                    </li>
+                `).join('')}
+            </ul>
+        `;
+    } catch (err) {
+        modalBody.innerHTML = `<div class="text-danger text-center">Error loading files: ${err}</div>`;
+    }
+}
+
+async function openCsvFile(filename) {
+    try {
+        const res = await fetch(`/csv/${filename}`);
+        const text = await res.text();
+        displayCsv(text);
+        const modal = bootstrap.Modal.getInstance(document.getElementById('csvModal'));
+        modal.hide();  // Chiude il modale dopo la selezione
+    } catch (err) {
+        alert('Error reading file: ' + err);
+    }
+}
+
+function displayCsv(csvText) {
+    const rows = csvText.trim().split(/\r?\n/);
+    const csvTable = document.getElementById('csv');
+
+    // Reset tabella mantenendo l’intestazione
+    csvTable.innerHTML = `
+        <tr class="text-center text-white">
+            <th>N.</th>
+            <th>DV</th>
+            <th>AIR TEMP</th>
+            <th>HUMIDITY</th>
+            <th>CURR GBP</th>
+            <th>FPGA</th>
+            <th>wri1</th>
+            <th>wri2</th>
+            <th>wri3</th>
+            <th>wri4</th>
+            <th>wri5</th>
+            <th>wri6</th>
+            <th>wri7</th>
+            <th>wri8</th>
+            <th>wri9</th>
+            <th>wri10</th>
+            <th>wri11</th>
+            <th>wri12</th>
+            <th>wri13</th>
+            <th>wri14</th>
+            <th>wri15</th>
+            <th>wri16</th>
+            <th>wri17</th>
+            <th>wri18</th>
+        </tr>
+    `;
+
+    rows.forEach((line, index) => {
+        const cols = line.split(',');
+        const tr = document.createElement('tr');
+        tr.classList.add('text-center', 'text-warning');
+        tr.innerHTML = `<td>${index + 1}</td>` + cols.map(c => `<td>${c}</td>`).join('');
+        csvTable.appendChild(tr);
+    });
+}
+
+setInterval(updateCountdown, 1000);
+
+setInterval(updateBme, 1000);
+updateBme();
+
+
+
+setInterval(updateMcp, 1000);
+updateMcp();
+
+setInterval(updateWet, 1000);
+updateWet();
+
+setInterval(updateKey, 1000);
+updateKey();
+
+
+
+
+function startFlashing(msg, source) {
+    if (!activeSources.has(source)) {
+        activeSources.add(source);
+        if (!document.getElementById("flashOverlay")) {
+            const overlay = document.createElement("div");
+            overlay.id = "flashOverlay";
+            overlay.classList.add("flash-overlay");
+            document.body.appendChild(overlay);
+        }
+        const trig = document.getElementById('trigger').innerHTML += msg;
+    }
+}
+
+function stopFlashing(source) {
+    activeSources.delete(source);
+    if (activeSources.size === 0) {
+        const overlay = document.getElementById("flashOverlay");
+        if (overlay) {
+            overlay.remove();
+            const trig = document.getElementById('trigger').innerText = ""
+        }
+    }
+}
+
+function copytoclip() {
+    const table = document.getElementById('csv');
+    if (!table) {
+        alert('Table not found!');
+        return;
+    }
+
+    let text = '';
+    const rows = Array.from(table.rows).slice(1)
+    for (const row of rows) {
+        const cells = Array.from(row.cells).slice(1).map(cell => cell.textContent.trim());
+        text += cells.join('\t') + '\n';
+    }
+
+    navigator.clipboard.writeText(text).then(() => {
+        alert("I'm in Clip ;)");
+    }).catch(err => {
+        alert('Error copying table.');
+    });
+}
+
+async function changeWet(ip) {
+    const mac = prompt("Insert the WET MAC Address");
+    const macRegex = /^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/;
+
+    if (!macRegex.test(mac)) {
+        alert("MAC address non valido. Formato richiesto: AA:BB:CC:DD:EE:FF");
+        return;
+    }
+    const response = await fetch('/edit_wet_ip', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({  set_wet_ip : ip,
+                                mac : mac})
+    });
+    const data = await response.json();
+    console.log(data);
+    if (data.arp.response === 200 & data.ip.response === 200) {
+        alert(`Ip wet updated in ${ip} ${mac}`);
+    }
+    location.reload();
+}
+
+async function setServer() {
+    const ip = document.getElementById("ipServer").value;
+    const response = await fetch('/edit_server_ip', {
+        method: 'POST',
+        headers: {
+            'Content-Type' : 'application/json'
+        },
+        body: JSON.stringify({ server_ip: ip})
+    });
+    const data = await response.json();
+    console.log(data);
+    alert(`Server ip changed in ${ip}`);
+    location.reload();
+}
+
+
+
+
+
+const rows = 24;
+const cols = 32;
+
+const margin = 20;
+const colorbarWidth = 50;
+
+//min max values
+const tempMin = 22;
+const tempMax = 40;
+
+const container = document.getElementById("thermalCanvasContainer");
+const canvas = document.getElementById("thermalCanvasReal");
+const ctx = canvas.getContext("2d");
+
+let cvReady = false;
+
+function checkOpenCV() {
+    if (typeof cv !== "undefined" && cv.Mat) {
+        cvReady = true;
+        console.log("OpenCV.js loaded!");
+        drawThermalFrame(new Array(rows * cols).fill(tempMin));
+    } else {
+        setTimeout(checkOpenCV, 100);
+    }
+}
+checkOpenCV();
+
+function resizeCanvas() {
+    const rect = container.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+    if (cvReady && lastFrame) {
+        drawThermalFrame(lastFrame);
+    }
+}
+resizeCanvas();
+window.addEventListener("resize", resizeCanvas);
+
+let lastFrame = null;
+
+
+
+const socket = io(window.location.origin, { transports: ["websocket"] });
+socket.on("connect", () => console.log("SocketIO connected"));
+socket.on("disconnect", () => console.log("SocketIO disconnected"));
+socket.on("connect_error", err => console.error("SocketIO ERROR:", err));
+
+socket.on("mlx90640_update", data => {
+    document.getElementById("tmax").innerText = `Temp Max: ${data.t_max.toFixed(1)} °C`;
+    document.getElementById("tmax_timestamp").innerText = data.timestamp;
+    lastFrame = data.array;
+    drawThermalFrame(data.array);
+});
+
+
+
+function arrayToMat(flat) {
+    const mat = new cv.Mat(rows, cols, cv.CV_32F);
+    for (let i = 0; i < rows * cols; i++) {
+        mat.floatPtr(Math.floor(i / cols), i % cols)[0] = flat[i];
+    }
+    return mat;
+}
+
+const offscreenThermalCanvas = document.createElement('canvas');
+const offscreenBarCanvas = document.createElement('canvas');
+
+
+function withTrackedMats(fn) {
+    const allocs = [];
+    function mkMat(...args) {
+        const m = new cv.Mat(...args);
+        allocs.push(m);
+        return m;
+    }
+    function mkMatScalar(rows, cols, type, scalar) {
+        const m = new cv.Mat(rows, cols, type, scalar);
+        allocs.push(m);
+        return m;
+    }
+
+    try {
+        return fn({ mkMat, mkMatScalar });
+    } finally {
+        for (let i = allocs.length - 1; i >= 0; i--) {
+            try { allocs[i].delete(); } catch (e) {}
+        }
+    }
+}
+
+
+function drawThermalFrame(flat) {
+    if (!cvReady || !flat || flat.length !== rows * cols) return;
+
+    const W = canvas.width;
+    const H = canvas.height;
+    const thermalWidth = Math.max(1, W - colorbarWidth - margin * 3);
+    const thermalHeight = Math.max(1, H - margin * 2);
+
+    for (let i = 0; i < flat.length; i++) {
+        const v = +flat[i];
+        if (!isFinite(v)) flat[i] = tempMin;
+    }
+    lastFrame = flat;
+
+    try {
+        withTrackedMats(({ mkMat, mkMatScalar }) => {
+
+            const mat = mkMat(rows, cols, cv.CV_32F);
+            for (let i = 0; i < rows * cols; i++) {
+                const temp = Math.max(tempMin, Math.min(tempMax, flat[i]));
+                mat.floatPtr((i / cols) | 0, i % cols)[0] = temp;
+            }
+
+            const blurred = mkMat(mat.rows, mat.cols, mat.type());
+            try {
+                cv.GaussianBlur(mat, blurred, new cv.Size(3, 3), 0);
+            } catch (err) {
+                console.error("Error GaussianBlur:", err, "mat.size:", mat.rows, mat.cols, "type:", mat.type());
+                throw err;
+            }
+
+            const up = mkMat(thermalHeight, thermalWidth, blurred.type());
+            try {
+                cv.resize(blurred, up, new cv.Size(thermalWidth, thermalHeight), 0, 0, cv.INTER_LANCZOS4);
+            } catch (err) {
+                console.error("Error resize:", err, "blurred.size:", blurred.rows, blurred.cols);
+                throw err;
+            }
+
+            const range = (tempMax - tempMin);
+            if (!isFinite(range) || range <= 0) {
+                console.error("Range non valid:", range, "tempMin/tempMax:", tempMin, tempMax);
+                range = 1;
+            }
+
+            const normalized = mkMat(up.rows, up.cols, up.type());
+            const matMin = mkMatScalar(up.rows, up.cols, up.type(), new cv.Scalar(tempMin));
+            const matRange = mkMatScalar(up.rows, up.cols, up.type(), new cv.Scalar(range));
+            const mat255 = mkMatScalar(up.rows, up.cols, up.type(), new cv.Scalar(255));
+
+            try {
+                cv.subtract(up, matMin, normalized);
+                cv.divide(normalized, matRange, normalized);
+                cv.multiply(normalized, mat255, normalized);
+            } catch (err) {
+                console.error("Error normalizer:", err);
+                throw err;
+            }
+
+            const norm_u8 = mkMat(up.rows, up.cols, cv.CV_8U);
+            try {
+                normalized.convertTo(norm_u8, cv.CV_8U);
+            } catch (err) {
+                console.error("Error convertTo CV_8U:", err, "normalized.type:", normalized.type());
+                throw err;
+            }
+
+            const invBase = mkMatScalar(norm_u8.rows, norm_u8.cols, norm_u8.type(), new cv.Scalar(255));
+            const inverted = mkMat(norm_u8.rows, norm_u8.cols, norm_u8.type());
+            try {
+                cv.subtract(invBase, norm_u8, inverted);
+            } catch (err) {
+                console.error("Error subtract inversion:", err);
+                throw err;
+            }
+
+            if (norm_u8.type() !== cv.CV_8U && norm_u8.type() !== cv.CV_8UC1) {
+                console.warn("norm_u8 undefined:", norm_u8.type());
+            }
+            const colored = mkMat(inverted.rows, inverted.cols, cv.CV_8UC3);
+            try {
+                cv.applyColorMap(inverted, colored, cv.COLORMAP_JET);
+            } catch (err) {
+                console.error("Error applyColorMap:", err, "inverted.type:", inverted.type(), "size:", inverted.rows, inverted.cols);
+                throw err;
+            }
+
+            offscreenThermalCanvas.width = thermalWidth;
+            offscreenThermalCanvas.height = thermalHeight;
+            try {
+                cv.imshow(offscreenThermalCanvas, colored);
+            } catch (err) {
+                console.error("Error cv.imshow thermal:", err, "colored.size:", colored.rows, colored.cols);
+                throw err;
+            }
+
+            ctx.fillStyle = "#000";
+            ctx.fillRect(0, 0, W, H);
+            ctx.drawImage(offscreenThermalCanvas, margin, margin);
+
+            drawColorbar(W - colorbarWidth - margin, margin, colorbarWidth, thermalHeight);
+        });
+    } catch (err) {
+        console.error("Error drawThermalFrame:", err);
+    }
+}
+
+function drawColorbar(x, y, width, height) {
+    try {
+        withTrackedMats(({ mkMat, mkMatScalar }) => {
+            const barHeight = Math.max(1, height);
+            const barMat = mkMat(barHeight, 1, cv.CV_8U);
+            for (let i = 0; i < barHeight; i++) {
+                barMat.data[i] = Math.floor(255 * (1 - i / barHeight));
+            }
+
+            const bar255 = mkMatScalar(barMat.rows, barMat.cols, barMat.type(), new cv.Scalar(255));
+            const barInv = mkMat(barMat.rows, barMat.cols, barMat.type());
+            cv.subtract(bar255, barMat, barInv);
+
+            const barColored = mkMat(barInv.rows, barInv.cols, cv.CV_8UC3);
+            cv.applyColorMap(barInv, barColored, cv.COLORMAP_JET);
+
+            const resized = mkMat(height, width, barColored.type());
+            cv.resize(barColored, resized, new cv.Size(width, barHeight), 0, 0, cv.INTER_NEAREST);
+
+            offscreenBarCanvas.width = width;
+            offscreenBarCanvas.height = barHeight;
+            cv.imshow(offscreenBarCanvas, resized);
+
+            ctx.drawImage(offscreenBarCanvas, x, y);
+
+            ctx.fillStyle = "#fff";
+            ctx.font = "bold 14px Arial";
+            ctx.textAlign = "left";
+            ctx.textBaseline = "middle";
+            ctx.fillText(`${tempMax}°C`, x + width + 5, y + 10);
+            ctx.fillText(`${tempMin}°C`, x + width + 5, y + height - 10);
+            ctx.fillText(`${((tempMax + tempMin) / 2).toFixed(0)}°C`, x + width + 5, y + height / 2);
+        });
+    } catch (err) {
+        console.error("Error drawColorbar:", err);
+    }
+}
+
+
+function cvScoped(callback) {
+    const allocations = [];
+
+    const Mat = function(...args) {
+        const m = new cv.Mat(...args);
+        allocations.push(m);
+        return m;
+    };
+
+    function track(fn) {
+        return function(...args) {
+            const result = fn.apply(cv, args);
+            if (result instanceof cv.Mat) allocations.push(result);
+            return result;
+        };
+    }
+
+    const api = {
+        Mat,
+        GaussianBlur: track(cv.GaussianBlur),
+        resize: track(cv.resize),
+        subtract: track(cv.subtract),
+        divide: track(cv.divide),
+        multiply: track(cv.multiply),
+        applyColorMap: track(cv.applyColorMap),
+        normalize: track(cv.normalize),
+        imshow: cv.imshow 
+    };
+
+    try {
+        callback(api);
+    } finally {
+        allocations.forEach(m => m.delete());
+    }
+}
+</script>
+{% endblock %}
